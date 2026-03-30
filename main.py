@@ -106,13 +106,22 @@ top20_score = df.sort_values("SCORE", ascending=False).head(20)
 fig_score20 = px.bar(
     top20_score,
     y="NOME",
-    x="RECORRENCIA",  # 👈 MUDOU AQUI
+    x="RECORRENCIA",
     orientation="h",
     text=top20_score["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
-    color="STATUS"
+    color="STATUS",
+    hover_data=["SCORE", "Soma de pacotes"]  # 🔥 bônus (mostra peso real)
 )
 
-fig_score20.update_layout(yaxis={'categoryorder': 'total ascending'})
+# 🔥 AQUI É O SEGREDO
+fig_score20.update_layout(
+    yaxis=dict(
+        categoryorder="array",
+        categoryarray=top20_score["NOME"][::-1]  # mantém ordem do ranking
+    )
+)
+
+st.plotly_chart(fig_score20, use_container_width=True, key=f"top20_score_{len(df)}")
 # -----------------------------
 # 🕒 RECORRÊNCIA POR TURNO
 # -----------------------------
