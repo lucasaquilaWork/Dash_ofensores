@@ -30,7 +30,7 @@ client = gspread.authorize(creds)
 # -----------------------------
 @st.cache_data(ttl=60)
 def carregar_dados():
-    sheet = client.open_by_key("COLE_AQUI_O_ID_DA_PLANILHA").worksheet("dsh-base")
+    sheet = client.open_by_key("1rzpOtOm8IvYICGOABtyJfbu7WdLhamt8aWoju01YLwY").worksheet("dsh-base")
     data = sheet.get_all_records()
     return pd.DataFrame(data)
 
