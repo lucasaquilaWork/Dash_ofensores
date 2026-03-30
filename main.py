@@ -30,7 +30,7 @@ client = gspread.authorize(creds)
 # -----------------------------
 @st.cache_data(ttl=60)
 def carregar_dados():
-    sheet = client.open_by_key("1fKdf4zNs5CjZm9wKv_FaBnZeiuR1isbP4Wby9lD40Lw").worksheet("dsh-base")
+    sheet = client.open_by_key("1rzpOtOm8IvYICGOABtyJfbu7WdLhamt8aWoju01YLwY").worksheet("dsh-base")
     data = sheet.get_all_records()
     return pd.DataFrame(data)
 
@@ -80,10 +80,10 @@ if motoristas:
 # -----------------------------
 st.subheader("🏆 Top 10 por Volume")
 
-top_volume = df.sort_values("Soma de pacotes", ascending=False).head(10)
+top10_volume = df.sort_values("Soma de pacotes", ascending=False).head(10)
 
 fig_volume = px.bar(
-    top_volume,
+    top10_volume,
     y="NOME",
     x="Soma de pacotes",
     text="Soma de pacotes",
@@ -95,23 +95,23 @@ fig_volume.update_layout(yaxis={'categoryorder': 'total ascending'})
 st.plotly_chart(fig_volume, use_container_width=True)
 
 # -----------------------------
-# 🚨 TOP 10 ERROS
+# 📉 TOP 10 RECORRÊNCIA
 # -----------------------------
-st.subheader("🚨 Top 10 com Mais Erros")
+st.subheader("📉 Top 10 por Recorrência")
 
-top_erros = df.sort_values("ERROS", ascending=False).head(10)
+top10_rec = df.sort_values("RECORRENCIA", ascending=False).head(10)
 
-fig_erros = px.bar(
-    top_erros,
+fig_rec10 = px.bar(
+    top10_rec,
     y="NOME",
-    x="ERROS",
-    text="ERROS",
-    color="STATUS",
-    orientation="h"
+    x="RECORRENCIA",
+    orientation="h",
+    text=top10_rec["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
+    color="STATUS"
 )
 
-fig_erros.update_layout(yaxis={'categoryorder': 'total ascending'})
-st.plotly_chart(fig_erros, use_container_width=True)
+fig_rec10.update_layout(yaxis={'categoryorder': 'total ascending'})
+st.plotly_chart(fig_rec10, use_container_width=True)
 
 # -----------------------------
 # 🏆 TOP 20 VOLUME
@@ -139,7 +139,7 @@ st.subheader("📉 Top 20 por Recorrência")
 
 top20_rec = df.sort_values("RECORRENCIA", ascending=False).head(20)
 
-fig_rec = px.bar(
+fig_rec20 = px.bar(
     top20_rec,
     y="NOME",
     x="RECORRENCIA",
@@ -148,8 +148,8 @@ fig_rec = px.bar(
     color="STATUS"
 )
 
-fig_rec.update_layout(yaxis={'categoryorder': 'total ascending'})
-st.plotly_chart(fig_rec, use_container_width=True)
+fig_rec20.update_layout(yaxis={'categoryorder': 'total ascending'})
+st.plotly_chart(fig_rec20, use_container_width=True)
 
 # -----------------------------
 # 🕒 RECORRÊNCIA POR TURNO
@@ -197,16 +197,6 @@ if len(motoristas) == 1:
     col2.metric("🔁 Vezes Ofensor", total_vezes)
     col3.metric("📉 Recorrência", f"{recorrencia:.2%}")
     col4.metric("🚨 Erros", total_aberto + total_onhold)
-
-    st.subheader("📊 Detalhamento de Erros")
-
-    detalhe = pd.DataFrame({
-        "Tipo": ["Pacote em Aberto", "OnHold"],
-        "Quantidade": [total_aberto, total_onhold]
-    })
-
-    fig_det = px.bar(detalhe, x="Tipo", y="Quantidade", text="Quantidade")
-    st.plotly_chart(fig_det, use_container_width=True)
 
 # -----------------------------
 # 📋 TABELA
