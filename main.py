@@ -101,22 +101,18 @@ st.plotly_chart(fig_top20, use_container_width=True, key=f"top20_volume_{len(df)
 # -----------------------------
 # 📉 TOP 20 RECORRÊNCIA (INTELIGENTE)
 # -----------------------------
-st.subheader("📉 Top 20 Recorrência (Ponderado)")
-
 top20_score = df.sort_values("SCORE", ascending=False).head(20)
 
 fig_score20 = px.bar(
     top20_score,
     y="NOME",
-    x="SCORE",
+    x="RECORRENCIA",  # 👈 MUDOU AQUI
     orientation="h",
     text=top20_score["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
     color="STATUS"
 )
 
 fig_score20.update_layout(yaxis={'categoryorder': 'total ascending'})
-st.plotly_chart(fig_score20, use_container_width=True, key=f"top20_score_{len(df)}")
-
 # -----------------------------
 # 🕒 RECORRÊNCIA POR TURNO
 # -----------------------------
