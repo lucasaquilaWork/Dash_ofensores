@@ -29,7 +29,7 @@ client = gspread.authorize(creds)
 # -----------------------------
 @st.cache_data(ttl=60)
 def carregar_dados():
-    sheet = client.open("NOME_DA_PLANILHA").worksheet("ABA")
+    sheet = client.open("Ofensores LSP_77 _ Guarulhos").worksheet("dsh-base")
     data = sheet.get_all_records()
     return pd.DataFrame(data)
 
