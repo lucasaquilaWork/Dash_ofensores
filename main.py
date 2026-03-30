@@ -80,44 +80,6 @@ if motoristas:
     df = df[df["NOME"].isin(motoristas)]
 
 # -----------------------------
-# 🏆 TOP 10 VOLUME
-# -----------------------------
-st.subheader("🏆 Top 10 por Volume")
-
-top10_volume = df.sort_values("Soma de pacotes", ascending=False).head(10)
-
-fig_volume = px.bar(
-    top10_volume,
-    y="NOME",
-    x="Soma de pacotes",
-    text="Soma de pacotes",
-    color="STATUS",
-    orientation="h"
-)
-
-fig_volume.update_layout(yaxis={'categoryorder': 'total ascending'})
-st.plotly_chart(fig_volume, use_container_width=True, key=f"top10_volume_{len(df)}")
-
-# -----------------------------
-# 📉 TOP 10 RECORRÊNCIA (INTELIGENTE)
-# -----------------------------
-st.subheader("📉 Top 10 Recorrência (Ponderado)")
-
-top10_score = df.sort_values("SCORE", ascending=False).head(10)
-
-fig_score10 = px.bar(
-    top10_score,
-    y="NOME",
-    x="SCORE",
-    orientation="h",
-    text=top10_score["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
-    color="STATUS"
-)
-
-fig_score10.update_layout(yaxis={'categoryorder': 'total ascending'})
-st.plotly_chart(fig_score10, use_container_width=True, key=f"top10_score_{len(df)}")
-
-# -----------------------------
 # 🏆 TOP 20 VOLUME
 # -----------------------------
 st.subheader("🏆 Top 20 por Volume")
