@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import gspread
 import plotly.express as px
+import numpy as np
 from google.oauth2.service_account import Credentials
 
 # -----------------------------
@@ -30,7 +31,7 @@ client = gspread.authorize(creds)
 # -----------------------------
 @st.cache_data(ttl=60)
 def carregar_dados():
-    sheet = client.open_by_key("1fKdf4zNs5CjZm9wKv_FaBnZeiuR1isbP4Wby9lD40Lw").worksheet("dsh-base")
+    sheet = client.open_by_key("1rzpOtOm8IvYICGOABtyJfbu7WdLhamt8aWoju01YLwY").worksheet("dsh-base")
     data = sheet.get_all_records()
     return pd.DataFrame(data)
 
@@ -50,6 +51,9 @@ df["RECORRENCIA"] = df.apply(
     lambda x: x["Vezes"] / x["Atribuicoes"] if x["Atribuicoes"] > 0 else 0,
     axis=1
 )
+
+# 🔥 SCORE INTELIGENTE
+df["SCORE"] = df["RECORRENCIA"] * np.log1p(df["Soma de pacotes"])
 
 df["STATUS"] = df["TAXA_ERRO"].apply(
     lambda x: "🔴 Crítico" if x > 0.05 else "🟡 Atenção" if x > 0.02 else "🟢 OK"
@@ -92,26 +96,26 @@ fig_volume = px.bar(
 )
 
 fig_volume.update_layout(yaxis={'categoryorder': 'total ascending'})
-st.plotly_chart(fig_volume, use_container_width=True)
+st.plotly_chart(fig_volume, use_container_width=True, key=f"top10_volume_{len(df)}")
 
 # -----------------------------
-# 📉 TOP 10 RECORRÊNCIA
+# 📉 TOP 10 RECORRÊNCIA (INTELIGENTE)
 # -----------------------------
-st.subheader("📉 Top 10 por Recorrência")
+st.subheader("📉 Top 10 Recorrência (Ponderado)")
 
-top10_rec = df.sort_values("RECORRENCIA", ascending=False).head(10)
+top10_score = df.sort_values("SCORE", ascending=False).head(10)
 
-fig_rec10 = px.bar(
-    top10_rec,
+fig_score10 = px.bar(
+    top10_score,
     y="NOME",
-    x="RECORRENCIA",
+    x="SCORE",
     orientation="h",
-    text=top10_rec["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
+    text=top10_score["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
     color="STATUS"
 )
 
-fig_rec10.update_layout(yaxis={'categoryorder': 'total ascending'})
-st.plotly_chart(fig_rec10, use_container_width=True)
+fig_score10.update_layout(yaxis={'categoryorder': 'total ascending'})
+st.plotly_chart(fig_score10, use_container_width=True, key=f"top10_score_{len(df)}")
 
 # -----------------------------
 # 🏆 TOP 20 VOLUME
@@ -130,26 +134,26 @@ fig_top20 = px.bar(
 )
 
 fig_top20.update_layout(yaxis={'categoryorder': 'total ascending'})
-st.plotly_chart(fig_top20, use_container_width=True)
+st.plotly_chart(fig_top20, use_container_width=True, key=f"top20_volume_{len(df)}")
 
 # -----------------------------
-# 📉 TOP 20 RECORRÊNCIA
+# 📉 TOP 20 RECORRÊNCIA (INTELIGENTE)
 # -----------------------------
-st.subheader("📉 Top 20 por Recorrência")
+st.subheader("📉 Top 20 Recorrência (Ponderado)")
 
-top20_rec = df.sort_values("RECORRENCIA", ascending=False).head(20)
+top20_score = df.sort_values("SCORE", ascending=False).head(20)
 
-fig_rec20 = px.bar(
-    top20_rec,
+fig_score20 = px.bar(
+    top20_score,
     y="NOME",
-    x="RECORRENCIA",
+    x="SCORE",
     orientation="h",
-    text=top20_rec["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
+    text=top20_score["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
     color="STATUS"
 )
 
-fig_rec20.update_layout(yaxis={'categoryorder': 'total ascending'})
-st.plotly_chart(fig_rec20, use_container_width=True)
+fig_score20.update_layout(yaxis={'categoryorder': 'total ascending'})
+st.plotly_chart(fig_score20, use_container_width=True, key=f"top20_score_{len(df)}")
 
 # -----------------------------
 # 🕒 RECORRÊNCIA POR TURNO
@@ -173,7 +177,7 @@ fig_turno = px.bar(
     text=turno["Recorrência"].apply(lambda x: f"{x:.1%}")
 )
 
-st.plotly_chart(fig_turno, use_container_width=True)
+st.plotly_chart(fig_turno, use_container_width=True, key=f"turno_{len(df)}")
 
 # -----------------------------
 # 🔎 ANÁLISE INDIVIDUAL
@@ -197,6 +201,16 @@ if len(motoristas) == 1:
     col2.metric("🔁 Vezes Ofensor", total_vezes)
     col3.metric("📉 Recorrência", f"{recorrencia:.2%}")
     col4.metric("🚨 Erros", total_aberto + total_onhold)
+
+    st.subheader("📊 Detalhamento de Erros")
+
+    detalhe = pd.DataFrame({
+        "Tipo": ["Pacote em Aberto", "OnHold"],
+        "Quantidade": [total_aberto, total_onhold]
+    })
+
+    fig_det = px.bar(detalhe, x="Tipo", y="Quantidade", text="Quantidade")
+    st.plotly_chart(fig_det, use_container_width=True, key=f"det_{motoristas[0]}")
 
 # -----------------------------
 # 📋 TABELA
