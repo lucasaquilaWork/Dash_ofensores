@@ -24,7 +24,7 @@ creds = Credentials.from_service_account_info(
 )
 
 client = gspread.authorize(creds)
-
+st.write(st.secrets["gcp_service_account"]["client_email"])
 # -----------------------------
 # 📥 CARREGAR DADOS
 # -----------------------------
