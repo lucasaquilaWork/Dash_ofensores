@@ -233,27 +233,27 @@ st.plotly_chart(fig_full_of, use_container_width=True)
 # -----------------------------
 st.subheader("🕒 Recorrência por Turno")
 
+# Garante que coluna existe
 if "Turno" not in df.columns:
-    st.warning("⚠️ Coluna 'Turno' não encontrada na planilha")
+    st.warning("Coluna 'Turno' não encontrada na base")
 else:
-    df["OFENSOR_FLAG"] = df["Vezes"].apply(lambda x: 1 if x > 0 else 0)
+    df_turno = df.copy()
 
-    turno = (
-        df.groupby("Turno")
-        .agg(
-            total_motoristas=("NOME", "nunique"),
-            ofensores=("OFENSOR_FLAG", "sum")
-        )
-        .reset_index()
-    )
+    # Motorista é considerado ofensor se teve pelo menos 1 ocorrência
+    df_turno["OFENSOR_FLAG"] = df_turno["Vezes"] > 0
 
-    turno["Recorrência"] = turno["ofensores"] / turno["total_motoristas"]
+    resumo_turno = df_turno.groupby("Turno").agg(
+        total_motoristas=("NOME", "nunique"),
+        ofensores=("OFENSOR_FLAG", "sum")
+    ).reset_index()
+
+    resumo_turno["Recorrência"] = resumo_turno["ofensores"] / resumo_turno["total_motoristas"]
 
     fig_turno = px.bar(
-        turno,
+        resumo_turno,
         x="Turno",
         y="Recorrência",
-        text=turno["Recorrência"].apply(lambda x: f"{x:.1%}")
+        text=resumo_turno["Recorrência"].apply(lambda x: f"{x:.1%}")
     )
 
     fig_turno.update_traces(textposition="outside")
