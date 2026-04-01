@@ -45,10 +45,8 @@ df["RECORRENCIA"] = df.apply(
     axis=1
 )
 
-# 🔥 PESO REAL (volume influencia)
 df["IMPACTO"] = df["RECORRENCIA"] * np.log1p(df["Soma de pacotes"])
 
-# 🔥 STATUS OPERACIONAL (CORRETO)
 def definir_status(x):
     if x > 0.5:
         return "Crítico"
@@ -59,11 +57,10 @@ def definir_status(x):
 
 df["STATUS"] = df["RECORRENCIA"].apply(definir_status)
 
-# 🎨 CORES MELHORADAS
 color_map = {
-    "Crítico": "#B91C1C",   # vermelho mais elegante
-    "Atenção": "#D97706",   # âmbar mais profissional
-    "OK": "#1D4ED8"         # azul forte
+    "Crítico": "#B91C1C",
+    "Atenção": "#D97706",
+    "OK": "#1D4ED8"
 }
 
 # -----------------------------
@@ -86,8 +83,10 @@ motoristas = st.multiselect(
 if motoristas:
     df = df[df["NOME"].isin(motoristas)]
 
+st.caption(f"{len(df)} motoristas analisados")
+
 # -----------------------------
-# 🔎 ANÁLISE INDIVIDUAL (TOPO)
+# 🔎 ANÁLISE INDIVIDUAL
 # -----------------------------
 if len(motoristas) == 1:
     st.subheader("🔎 Análise do Motorista")
@@ -116,21 +115,24 @@ if len(motoristas) == 1:
         ]
     }).sort_values("Quantidade", ascending=False)
 
-    fig_det = px.bar(
-        detalhe,
-        x="Tipo",
-        y="Quantidade",
-        text="Quantidade",
-        color="Tipo"
-    )
-
+    fig_det = px.bar(detalhe, x="Tipo", y="Quantidade", text="Quantidade")
     fig_det.update_traces(textposition="outside")
     st.plotly_chart(fig_det, use_container_width=True)
 
 # -----------------------------
+# 🏆 TÍTULOS DINÂMICOS
+# -----------------------------
+if motoristas:
+    titulo_volume = "🏆 Ranking por Volume (Filtro Aplicado)"
+    titulo_ofensor = "📉 Ranking de Ofensores (Filtro Aplicado)"
+else:
+    titulo_volume = "🏆 Top 20 por Volume"
+    titulo_ofensor = "📉 Top 20 Ofensores (Impacto Real)"
+
+# -----------------------------
 # 🏆 TOP 20 VOLUME
 # -----------------------------
-st.subheader("🏆 Top 20 por Volume")
+st.subheader(titulo_volume)
 
 top20_volume = df.sort_values("Soma de pacotes", ascending=False).head(20)
 
@@ -150,9 +152,32 @@ fig_top20.update_layout(yaxis={'categoryorder': 'total ascending'})
 st.plotly_chart(fig_top20, use_container_width=True)
 
 # -----------------------------
-# 📉 TOP 20 OFENSORES (REAL)
+# 📊 VISÃO COMPLETA (TODOS)
 # -----------------------------
-st.subheader("📉 Top 20 Ofensores (Impacto Real)")
+st.subheader("📊 Visão Completa - Volume Total")
+
+full_volume = df.sort_values("Soma de pacotes", ascending=False)
+
+fig_full_volume = px.bar(
+    full_volume,
+    y="NOME",
+    x="Soma de pacotes",
+    orientation="h",
+    color="STATUS",
+    color_discrete_map=color_map
+)
+
+fig_full_volume.update_layout(
+    yaxis={'categoryorder': 'total ascending'},
+    height=800  # 🔥 importante pra caber tudo
+)
+
+st.plotly_chart(fig_full_volume, use_container_width=True)
+
+# -----------------------------
+# 📉 TOP 20 OFENSORES
+# -----------------------------
+st.subheader(titulo_ofensor)
 
 top20 = df.sort_values(["IMPACTO", "Soma de pacotes"], ascending=False).head(20)
 
@@ -163,13 +188,11 @@ fig_score = px.bar(
     orientation="h",
     text=top20["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
     color="STATUS",
-    color_discrete_map=color_map,
-    hover_data=["Soma de pacotes", "IMPACTO"]
+    color_discrete_map=color_map
 )
 
 fig_score.update_traces(textposition="outside")
 
-# 🔥 ORDEM REAL (SEM BUG VISUAL)
 fig_score.update_layout(
     yaxis=dict(
         categoryorder="array",
@@ -178,6 +201,29 @@ fig_score.update_layout(
 )
 
 st.plotly_chart(fig_score, use_container_width=True)
+
+# -----------------------------
+# 📊 VISÃO COMPLETA OFENSORES
+# -----------------------------
+st.subheader("📊 Visão Completa - Todos Ofensores")
+
+full_ofensor = df.sort_values("RECORRENCIA", ascending=False)
+
+fig_full_of = px.bar(
+    full_ofensor,
+    y="NOME",
+    x="RECORRENCIA",
+    orientation="h",
+    color="STATUS",
+    color_discrete_map=color_map
+)
+
+fig_full_of.update_layout(
+    yaxis={'categoryorder': 'total ascending'},
+    height=800
+)
+
+st.plotly_chart(fig_full_of, use_container_width=True)
 
 # -----------------------------
 # 🕒 RECORRÊNCIA POR TURNO
