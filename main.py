@@ -45,22 +45,25 @@ df["RECORRENCIA"] = df.apply(
     axis=1
 )
 
-# 🔥 RECORRÊNCIA PONDERADA (mais justo)
-df["REC_PONDERADA"] = df["RECORRENCIA"] * np.log1p(df["Soma de pacotes"])
+# 🔥 PESO REAL (volume influencia)
+df["IMPACTO"] = df["RECORRENCIA"] * np.log1p(df["Soma de pacotes"])
 
-# 🔥 SCORE FINAL
-df["SCORE"] = df["REC_PONDERADA"]
+# 🔥 STATUS OPERACIONAL (CORRETO)
+def definir_status(x):
+    if x > 0.5:
+        return "Crítico"
+    elif x > 0.3:
+        return "Atenção"
+    else:
+        return "OK"
 
-# STATUS (melhor leitura visual)
-df["STATUS"] = df["RECORRENCIA"].apply(
-    lambda x: "Crítico" if x > 0.5 else "Atenção" if x > 0.3 else "OK"
-)
+df["STATUS"] = df["RECORRENCIA"].apply(definir_status)
 
-# 🎨 CORES MELHORADAS (menos agressivas)
+# 🎨 CORES MELHORADAS
 color_map = {
-    "Crítico": "#DC2626",   # vermelho mais suave
-    "Atenção": "#EAB308",   # amarelo equilibrado
-    "OK": "#2563EB"         # azul padrão bonito
+    "Crítico": "#B91C1C",   # vermelho mais elegante
+    "Atenção": "#D97706",   # âmbar mais profissional
+    "OK": "#1D4ED8"         # azul forte
 }
 
 # -----------------------------
@@ -84,7 +87,7 @@ if motoristas:
     df = df[df["NOME"].isin(motoristas)]
 
 # -----------------------------
-# 🔎 ANÁLISE INDIVIDUAL
+# 🔎 ANÁLISE INDIVIDUAL (TOPO)
 # -----------------------------
 if len(motoristas) == 1:
     st.subheader("🔎 Análise do Motorista")
@@ -111,9 +114,7 @@ if len(motoristas) == 1:
             motorista_df["PACOTE EM ABERTO"].sum(),
             motorista_df["OnHold"].sum()
         ]
-    })
-
-    detalhe = detalhe.sort_values("Quantidade", ascending=False)
+    }).sort_values("Quantidade", ascending=False)
 
     fig_det = px.bar(
         detalhe,
@@ -124,7 +125,7 @@ if len(motoristas) == 1:
     )
 
     fig_det.update_traces(textposition="outside")
-    st.plotly_chart(fig_det, use_container_width=True, key=f"det_{motoristas[0]}")
+    st.plotly_chart(fig_det, use_container_width=True)
 
 # -----------------------------
 # 🏆 TOP 20 VOLUME
@@ -144,41 +145,39 @@ fig_top20 = px.bar(
 )
 
 fig_top20.update_traces(textposition="outside")
+fig_top20.update_layout(yaxis={'categoryorder': 'total ascending'})
 
-fig_top20.update_layout(
-    yaxis={'categoryorder': 'total ascending'}
-)
-
-st.plotly_chart(fig_top20, use_container_width=True, key=f"top20_volume_{len(df)}")
+st.plotly_chart(fig_top20, use_container_width=True)
 
 # -----------------------------
-# 📉 TOP 20 IMPACTO REAL
+# 📉 TOP 20 OFENSORES (REAL)
 # -----------------------------
 st.subheader("📉 Top 20 Ofensores (Impacto Real)")
 
-top20_score = df.sort_values("SCORE", ascending=False).head(20)
+top20 = df.sort_values(["IMPACTO", "Soma de pacotes"], ascending=False).head(20)
 
-fig_score20 = px.bar(
-    top20_score,
+fig_score = px.bar(
+    top20,
     y="NOME",
     x="RECORRENCIA",
     orientation="h",
-    text=top20_score["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
+    text=top20["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
     color="STATUS",
     color_discrete_map=color_map,
-    hover_data=["Soma de pacotes", "REC_PONDERADA"]
+    hover_data=["Soma de pacotes", "IMPACTO"]
 )
 
-fig_score20.update_traces(textposition="outside")
+fig_score.update_traces(textposition="outside")
 
-fig_score20.update_layout(
+# 🔥 ORDEM REAL (SEM BUG VISUAL)
+fig_score.update_layout(
     yaxis=dict(
         categoryorder="array",
-        categoryarray=top20_score["NOME"][::-1]
+        categoryarray=top20.sort_values("RECORRENCIA")["NOME"]
     )
 )
 
-st.plotly_chart(fig_score20, use_container_width=True, key=f"top20_score_{len(df)}")
+st.plotly_chart(fig_score, use_container_width=True)
 
 # -----------------------------
 # 🕒 RECORRÊNCIA POR TURNO
@@ -204,7 +203,7 @@ fig_turno = px.bar(
 
 fig_turno.update_traces(textposition="outside")
 
-st.plotly_chart(fig_turno, use_container_width=True, key=f"turno_{len(df)}")
+st.plotly_chart(fig_turno, use_container_width=True)
 
 # -----------------------------
 # 📋 TABELA
