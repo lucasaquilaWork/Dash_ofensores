@@ -8,8 +8,8 @@ from google.oauth2.service_account import Credentials
 # -----------------------------
 # ⚙️ CONFIG
 # -----------------------------
-st.set_page_config(page_title="Dashboard Mensal Motoristas", layout="wide")
-st.title("📊 Dashboard Mensal de Motoristas")
+st.set_page_config(page_title="Dashboard Motoristas", layout="wide")
+st.title("📊 Dashboard de Motoristas")
 
 # -----------------------------
 # 🔐 CONEXÃO GOOGLE SHEETS
@@ -45,31 +45,8 @@ df["RECORRENCIA"] = df.apply(
     axis=1
 )
 
-# PERFIL
-df["PERFIL"] = df.apply(
-    lambda x: "🔥 Recorrente"
-    if x["RECORRENCIA"] > 0.4 and x["Atribuicoes"] > 10
-    else "⚠️ Pontual"
-    if x["RECORRENCIA"] > 0.4
-    else "✅ Estável",
-    axis=1
-)
+df["IMPACTO"] = df["RECORRENCIA"] * np.log1p(df["Soma de pacotes"])
 
-# CONSISTÊNCIA
-df["CONSISTENCIA"] = df["RECORRENCIA"]
-
-# PESO POR TURNO
-df["PESO_SD"] = df["SD"] / df["Atribuicoes"]
-df["PESO_AM"] = df["AM"] / df["Atribuicoes"]
-
-# SCORE / RANKING MENSAL
-df["RANK_MENSAL"] = (
-    df["RECORRENCIA"] * 0.5 +
-    (df["Vezes"] / df["Vezes"].max()) * 0.3 +
-    (df["Soma de pacotes"] / df["Soma de pacotes"].max()) * 0.2
-)
-
-# STATUS
 def definir_status(x):
     if x > 0.5:
         return "Crítico"
@@ -98,12 +75,15 @@ col3.metric("📉 Recorrência Média", f"{df['RECORRENCIA'].mean():.2%}")
 # -----------------------------
 # 🔍 FILTRO
 # -----------------------------
-motoristas = st.multiselect("Filtrar motoristas", df["NOME"].unique())
+motoristas = st.multiselect(
+    "Filtrar motoristas",
+    df["NOME"].unique()
+)
 
 if motoristas:
     df = df[df["NOME"].isin(motoristas)]
 
-st.caption(f"{len(df)} motoristas analisados no mês")
+st.caption(f"{len(df)} motoristas analisados")
 
 # -----------------------------
 # 🔎 ANÁLISE INDIVIDUAL
@@ -111,103 +91,168 @@ st.caption(f"{len(df)} motoristas analisados no mês")
 if len(motoristas) == 1:
     st.subheader("🔎 Análise do Motorista")
 
-    m = df[df["NOME"] == motoristas[0]]
+    motorista_df = df[df["NOME"] == motoristas[0]]
+
+    total_pacotes = motorista_df["Soma de pacotes"].sum()
+    total_vezes = motorista_df["Vezes"].sum()
+    total_atr = motorista_df["Atribuicoes"].sum()
+
+    recorrencia = total_vezes / total_atr if total_atr > 0 else 0
 
     col1, col2, col3 = st.columns(3)
 
-    col1.metric("📦 Pacotes", int(m["Soma de pacotes"].sum()))
-    col2.metric("🔁 Ofensas", int(m["Vezes"].sum()))
-    col3.metric("📉 Recorrência", f"{(m['Vezes'].sum()/m['Atribuicoes'].sum()):.2%}")
+    col1.metric("📦 Pacotes", total_pacotes)
+    col2.metric("🔁 Vezes Ofensor", total_vezes)
+    col3.metric("📉 Recorrência", f"{recorrencia:.2%}")
 
     st.subheader("📊 Distribuição de Erros")
 
     detalhe = pd.DataFrame({
         "Tipo": ["Pacote em Aberto", "OnHold"],
         "Quantidade": [
-            m["PACOTE EM ABERTO"].sum(),
-            m["OnHold"].sum()
+            motorista_df["PACOTE EM ABERTO"].sum(),
+            motorista_df["OnHold"].sum()
         ]
     }).sort_values("Quantidade", ascending=False)
 
-    st.plotly_chart(px.bar(detalhe, x="Tipo", y="Quantidade", text="Quantidade"), use_container_width=True)
+    fig_det = px.bar(detalhe, x="Tipo", y="Quantidade", text="Quantidade")
+    fig_det.update_traces(textposition="outside")
+    st.plotly_chart(fig_det, use_container_width=True)
 
 # -----------------------------
-# 🚨 PIORES DO MÊS
+# 🏆 TÍTULOS DINÂMICOS
 # -----------------------------
-st.subheader("🚨 Piores do Mês")
-
-piores = df.sort_values("RANK_MENSAL", ascending=False).head(15)
-st.dataframe(piores)
-
-# -----------------------------
-# 💬 INSIGHTS AUTOMÁTICOS
-# -----------------------------
-st.subheader("💬 Insights Operacionais")
-
-for _, row in piores.head(5).iterrows():
-    st.write(
-        f"{row['NOME']} → {row['RECORRENCIA']:.0%} de recorrência em {row['Atribuicoes']} carregamentos"
-    )
+if motoristas:
+    titulo_volume = "🏆 Ranking por Volume (Filtro Aplicado)"
+    titulo_ofensor = "📉 Ranking de Ofensores (Filtro Aplicado)"
+else:
+    titulo_volume = "🏆 Top 20 por Volume"
+    titulo_ofensor = "📉 Top 20 Ofensores (Impacto Real)"
 
 # -----------------------------
 # 🏆 TOP 20 VOLUME
 # -----------------------------
-st.subheader("🏆 Top 20 por Volume")
+st.subheader(titulo_volume)
 
 top20_volume = df.sort_values("Soma de pacotes", ascending=False).head(20)
 
-st.plotly_chart(
-    px.bar(top20_volume, y="NOME", x="Soma de pacotes", orientation="h",
-           color="STATUS", color_discrete_map=color_map),
-    use_container_width=True
+fig_top20 = px.bar(
+    top20_volume,
+    y="NOME",
+    x="Soma de pacotes",
+    orientation="h",
+    text="Soma de pacotes",
+    color="STATUS",
+    color_discrete_map=color_map
 )
 
-# -----------------------------
-# 📉 TOP OFENSORES
-# -----------------------------
-st.subheader("📉 Top Ofensores do Mês")
+fig_top20.update_traces(textposition="outside")
+fig_top20.update_layout(yaxis={'categoryorder': 'total ascending'})
 
-top_of = df.sort_values("RANK_MENSAL", ascending=False).head(20)
+st.plotly_chart(fig_top20, use_container_width=True)
 
-st.plotly_chart(
-    px.bar(top_of, y="NOME", x="RECORRENCIA", orientation="h",
-           color="STATUS", color_discrete_map=color_map),
-    use_container_width=True
+# -----------------------------
+# 📊 VISÃO COMPLETA (TODOS)
+# -----------------------------
+st.subheader("📊 Visão Completa - Volume Total")
+
+full_volume = df.sort_values("Soma de pacotes", ascending=False)
+
+fig_full_volume = px.bar(
+    full_volume,
+    y="NOME",
+    x="Soma de pacotes",
+    orientation="h",
+    color="STATUS",
+    color_discrete_map=color_map
 )
 
-# -----------------------------
-# 📊 VISÃO COMPLETA
-# -----------------------------
-st.subheader("📊 Visão Completa")
-
-full = df.sort_values("RECORRENCIA", ascending=False)
-
-st.plotly_chart(
-    px.bar(full, y="NOME", x="RECORRENCIA", orientation="h",
-           color="STATUS", color_discrete_map=color_map, height=800),
-    use_container_width=True
+fig_full_volume.update_layout(
+    yaxis={'categoryorder': 'total ascending'},
+    height=800  # 🔥 importante pra caber tudo
 )
 
+st.plotly_chart(fig_full_volume, use_container_width=True)
+
 # -----------------------------
-# 🕒 TURNOS
+# 📉 TOP 20 OFENSORES
 # -----------------------------
-st.subheader("🕒 Análise por Turno")
+st.subheader(titulo_ofensor)
+
+top20 = df.sort_values(["IMPACTO", "Soma de pacotes"], ascending=False).head(20)
+
+fig_score = px.bar(
+    top20,
+    y="NOME",
+    x="RECORRENCIA",
+    orientation="h",
+    text=top20["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
+    color="STATUS",
+    color_discrete_map=color_map
+)
+
+fig_score.update_traces(textposition="outside")
+
+fig_score.update_layout(
+    yaxis=dict(
+        categoryorder="array",
+        categoryarray=top20.sort_values("RECORRENCIA")["NOME"]
+    )
+)
+
+st.plotly_chart(fig_score, use_container_width=True)
+
+# -----------------------------
+# 📊 VISÃO COMPLETA OFENSORES
+# -----------------------------
+st.subheader("📊 Visão Completa - Todos Ofensores")
+
+full_ofensor = df.sort_values("RECORRENCIA", ascending=False)
+
+fig_full_of = px.bar(
+    full_ofensor,
+    y="NOME",
+    x="RECORRENCIA",
+    orientation="h",
+    color="STATUS",
+    color_discrete_map=color_map
+)
+
+fig_full_of.update_layout(
+    yaxis={'categoryorder': 'total ascending'},
+    height=800
+)
+
+st.plotly_chart(fig_full_of, use_container_width=True)
+
+# -----------------------------
+# 🕒 RECORRÊNCIA POR TURNO
+# -----------------------------
+st.subheader("🕒 Recorrência por Turno")
+
+total_atr = df["Atribuicoes"].sum()
 
 turno = pd.DataFrame({
     "Turno": ["SD", "AM"],
-    "Participação": [
-        df["SD"].sum() / df["Atribuicoes"].sum(),
-        df["AM"].sum() / df["Atribuicoes"].sum()
+    "Recorrência": [
+        df["SD"].sum() / total_atr if total_atr > 0 else 0,
+        df["AM"].sum() / total_atr if total_atr > 0 else 0
     ]
 })
 
-st.plotly_chart(
-    px.bar(turno, x="Turno", y="Participação", text="Participação"),
-    use_container_width=True
+fig_turno = px.bar(
+    turno,
+    x="Turno",
+    y="Recorrência",
+    text=turno["Recorrência"].apply(lambda x: f"{x:.1%}")
 )
 
+fig_turno.update_traces(textposition="outside")
+
+st.plotly_chart(fig_turno, use_container_width=True)
+
 # -----------------------------
-# 📋 TABELA FINAL
+# 📋 TABELA
 # -----------------------------
-st.subheader("📋 Dados completos")
+st.subheader("📋 Dados detalhados")
 st.dataframe(df, use_container_width=True)
