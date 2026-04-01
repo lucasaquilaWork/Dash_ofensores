@@ -152,7 +152,7 @@ fig_top20.update_layout(yaxis={'categoryorder': 'total ascending'})
 st.plotly_chart(fig_top20, use_container_width=True)
 
 # -----------------------------
-# 📊 VISÃO COMPLETA (TODOS)
+# 📊 VISÃO COMPLETA VOLUME
 # -----------------------------
 st.subheader("📊 Visão Completa - Volume Total")
 
@@ -167,10 +167,7 @@ fig_full_volume = px.bar(
     color_discrete_map=color_map
 )
 
-fig_full_volume.update_layout(
-    yaxis={'categoryorder': 'total ascending'},
-    height=800  # 🔥 importante pra caber tudo
-)
+fig_full_volume.update_layout(height=800)
 
 st.plotly_chart(fig_full_volume, use_container_width=True)
 
@@ -218,33 +215,33 @@ fig_full_of = px.bar(
     color_discrete_map=color_map
 )
 
-fig_full_of.update_layout(
-    yaxis={'categoryorder': 'total ascending'},
-    height=800
-)
+fig_full_of.update_layout(height=800)
 
 st.plotly_chart(fig_full_of, use_container_width=True)
 
 # -----------------------------
-# 🕒 RECORRÊNCIA POR TURNO
+# 🕒 % OFENSORES POR TURNO (CORRETO)
 # -----------------------------
-st.subheader("🕒 Recorrência por Turno")
+st.subheader("🕒 % de Motoristas Ofensores por Turno")
 
-total_atr = df["Atribuicoes"].sum()
+df["OFENSOR"] = df["RECORRENCIA"] > 0
 
-turno = pd.DataFrame({
-    "Turno": ["SD", "AM"],
-    "Recorrência": [
-        df["SD"].sum() / total_atr if total_atr > 0 else 0,
-        df["AM"].sum() / total_atr if total_atr > 0 else 0
-    ]
-})
+turno_df = df.groupby("Turno").agg(
+    total_motoristas=("NOME", "count"),
+    ofensores=("OFENSOR", "sum")
+).reset_index()
+
+turno_df["PERC_OFENSORES"] = turno_df["ofensores"] / turno_df["total_motoristas"]
+
+turno_df = turno_df.sort_values("PERC_OFENSORES", ascending=False)
 
 fig_turno = px.bar(
-    turno,
+    turno_df,
     x="Turno",
-    y="Recorrência",
-    text=turno["Recorrência"].apply(lambda x: f"{x:.1%}")
+    y="PERC_OFENSORES",
+    text=turno_df["PERC_OFENSORES"].apply(lambda x: f"{x:.1%}"),
+    color="PERC_OFENSORES",
+    color_continuous_scale=["#1D4ED8", "#D97706", "#B91C1C"]
 )
 
 fig_turno.update_traces(textposition="outside")
