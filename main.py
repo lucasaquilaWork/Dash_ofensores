@@ -45,13 +45,20 @@ df["RECORRENCIA"] = df.apply(
     axis=1
 )
 
-# 🔥 SCORE INTELIGENTE
+# SCORE (peso por volume)
 df["SCORE"] = df["RECORRENCIA"] * np.log1p(df["Soma de pacotes"])
 
-# 🔥 STATUS OPERACIONAL
+# STATUS CORRIGIDO
 df["STATUS"] = df["RECORRENCIA"].apply(
-    lambda x: "🔴 Crítico" if x > 0.5 else "🟡 Atenção" if x > 0.3 else "🟢 OK"
+    lambda x: "🔴 Crítico" if x > 0.5 else "🟡 Atenção" if x > 0.3 else "🔵 OK"
 )
+
+# 🎨 MAPA DE CORES
+color_map = {
+    "🔴 Crítico": "#EF4444",
+    "🟡 Atenção": "#FACC15",
+    "🔵 OK": "#3B82F6"
+}
 
 # -----------------------------
 # 📌 KPIs
@@ -104,6 +111,7 @@ if len(motoristas) == 1:
     })
 
     fig_det = px.bar(detalhe, x="Tipo", y="Quantidade", text="Quantidade")
+    fig_det.update_traces(textposition="outside")
     st.plotly_chart(fig_det, use_container_width=True, key=f"det_{motoristas[0]}")
 
 # -----------------------------
@@ -119,14 +127,22 @@ fig_top20 = px.bar(
     x="Soma de pacotes",
     orientation="h",
     text="Soma de pacotes",
-    color="STATUS"
+    color="STATUS",
+    color_discrete_map=color_map
 )
 
-fig_top20.update_layout(yaxis={'categoryorder': 'total ascending'})
+fig_top20.update_traces(textposition="outside")
+
+fig_top20.update_layout(
+    yaxis={'categoryorder': 'total ascending'},
+    uniformtext_minsize=8,
+    uniformtext_mode='hide'
+)
+
 st.plotly_chart(fig_top20, use_container_width=True, key=f"top20_volume_{len(df)}")
 
 # -----------------------------
-# 📉 TOP 20 RECORRÊNCIA (INTELIGENTE)
+# 📉 TOP 20 RECORRÊNCIA
 # -----------------------------
 st.subheader("📉 Top 20 Ofensores (Impacto Real)")
 
@@ -139,14 +155,19 @@ fig_score20 = px.bar(
     orientation="h",
     text=top20_score["RECORRENCIA"].apply(lambda x: f"{x:.1%}"),
     color="STATUS",
+    color_discrete_map=color_map,
     hover_data=["SCORE", "Soma de pacotes"]
 )
+
+fig_score20.update_traces(textposition="outside")
 
 fig_score20.update_layout(
     yaxis=dict(
         categoryorder="array",
         categoryarray=top20_score["NOME"][::-1]
-    )
+    ),
+    uniformtext_minsize=8,
+    uniformtext_mode='hide'
 )
 
 st.plotly_chart(fig_score20, use_container_width=True, key=f"top20_score_{len(df)}")
@@ -172,6 +193,8 @@ fig_turno = px.bar(
     y="Recorrência",
     text=turno["Recorrência"].apply(lambda x: f"{x:.1%}")
 )
+
+fig_turno.update_traces(textposition="outside")
 
 st.plotly_chart(fig_turno, use_container_width=True, key=f"turno_{len(df)}")
 
