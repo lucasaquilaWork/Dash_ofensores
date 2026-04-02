@@ -78,13 +78,28 @@ col3.metric("📉 Recorrência Média", f"{df['RECORRENCIA'].mean():.2%}")
 # -----------------------------
 # 🔍 FILTRO
 # -----------------------------
-motoristas = st.multiselect(
+# -----------------------------
+# 🔍 FILTROS
+# -----------------------------
+col_f1, col_f2 = st.columns(2)
+
+motoristas = col_f1.multiselect(
     "Filtrar motoristas",
     df["NOME"].unique()
 )
 
+# 🔥 FILTRO DE TURNO
+turnos = col_f2.multiselect(
+    "Filtrar turno",
+    df["Turno"].dropna().unique()
+)
+
+# Aplica filtros
 if motoristas:
     df = df[df["NOME"].isin(motoristas)]
+
+if turnos:
+    df = df[df["Turno"].isin(turnos)]
 
 st.caption(f"{len(df)} motoristas analisados")
 
