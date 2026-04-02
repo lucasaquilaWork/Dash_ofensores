@@ -199,6 +199,45 @@ fig_full_volume.update_layout(
 st.plotly_chart(fig_full_volume, use_container_width=True)
 
 # -----------------------------
+# 🚗 RECORRÊNCIA MÉDIA POR VEÍCULO
+# -----------------------------
+st.subheader("🚗 Recorrência Média por Veículo")
+
+# Agrupa por veículo
+rec_veiculo = (
+    df.groupby("Veiculo")
+    .agg(
+        recorrencia_media=("RECORRENCIA", "mean"),
+        total_motoristas=("NOME", "count"),
+        total_pacotes=("Soma de pacotes", "sum")
+    )
+    .reset_index()
+)
+
+# Ordena do pior pro melhor
+rec_veiculo = rec_veiculo.sort_values("recorrencia_media", ascending=False)
+
+# Gráfico
+fig_veiculo = px.bar(
+    rec_veiculo,
+    y="Veiculo",
+    x="recorrencia_media",
+    orientation="h",
+    text=rec_veiculo["recorrencia_media"].apply(lambda x: f"{x:.1%}"),
+    color="recorrencia_media",
+    color_continuous_scale="RdYlBu_r",  # 🔥 vermelho = pior
+    hover_data=["total_motoristas", "total_pacotes"]
+)
+
+fig_veiculo.update_traces(textposition="outside")
+
+fig_veiculo.update_layout(
+    yaxis={'categoryorder': 'total ascending'}
+)
+
+st.plotly_chart(fig_veiculo, use_container_width=True)
+
+# -----------------------------
 # 📉 TOP 20 OFENSORES
 # -----------------------------
 st.subheader(titulo_ofensor)
