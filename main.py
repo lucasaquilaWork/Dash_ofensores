@@ -76,30 +76,36 @@ col2.metric("🔁 Total Ofensas", int(df["Vezes"].sum()))
 col3.metric("📉 Recorrência Média", f"{df['RECORRENCIA'].mean():.2%}")
 
 # -----------------------------
-# 🔍 FILTRO
-# -----------------------------
-# -----------------------------
 # 🔍 FILTROS
 # -----------------------------
-col_f1, col_f2 = st.columns(2)
+col_f1, col_f2, col_f3 = st.columns(3)
 
 motoristas = col_f1.multiselect(
     "Filtrar motoristas",
-    df["NOME"].unique()
+    df["NOME"].dropna().unique()
 )
 
-# 🔥 FILTRO DE TURNO
 turnos = col_f2.multiselect(
     "Filtrar turno",
-    df["Turno"].dropna().unique()
+    sorted(df["Turno"].dropna().unique())
 )
 
-# Aplica filtros
+veiculos = col_f3.multiselect(
+    "Filtrar veículo",
+    sorted(df["Veiculo"].dropna().unique())
+)
+
+# -----------------------------
+# 🔄 APLICA FILTROS
+# -----------------------------
 if motoristas:
     df = df[df["NOME"].isin(motoristas)]
 
 if turnos:
     df = df[df["Turno"].isin(turnos)]
+
+if veiculos:
+    df = df[df["Veiculo"].isin(veiculos)]
 
 st.caption(f"{len(df)} motoristas analisados")
 
