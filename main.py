@@ -206,7 +206,7 @@ else:
 # -----------------------------
 st.subheader(titulo_volume)
 
-
+top20_volume = df.sort_values("Soma de pacotes", ascending=False).head(20)
 fig_top20 = px.bar(
     top20_volume,
     y="NOME",
