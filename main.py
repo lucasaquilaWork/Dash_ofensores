@@ -75,10 +75,11 @@ col1.metric("📦 Total Pacotes", int(df["Soma de pacotes"].sum()))
 col2.metric("🔁 Total Ofensas", int(df["Vezes"].sum()))
 col3.metric("📉 Recorrência Média", f"{df['RECORRENCIA'].mean():.2%}")
 
+
 # -----------------------------
 # 🔍 FILTROS
 # -----------------------------
-col_f1, col_f2, col_f3 = st.columns(3)
+col_f1, col_f2, col_f3, col_f4 = st.columns(4)
 
 motoristas = col_f1.multiselect(
     "Filtrar motoristas",
@@ -95,6 +96,14 @@ veiculos = col_f3.multiselect(
     sorted(df["Veiculo"].dropna().unique())
 )
 
+tipo_ofensa = col_f4.multiselect(
+    "Tipo de ofensa",
+    ["OnHold", "Pacote em Aberto"]
+)
+
+# -----------------------------
+# 🔄 APLICA FILTROS
+# -----------------------------
 # -----------------------------
 # 🔄 APLICA FILTROS
 # -----------------------------
@@ -107,8 +116,14 @@ if turnos:
 if veiculos:
     df = df[df["Veiculo"].isin(veiculos)]
 
-st.caption(f"{len(df)} motoristas analisados")
-
+# 🔥 FILTRO DE OFENSA
+if tipo_ofensa:
+    if "OnHold" in tipo_ofensa and "Pacote em Aberto" in tipo_ofensa:
+        pass  # mantém tudo
+    elif "OnHold" in tipo_ofensa:
+        df = df[df["OnHold"] > 0]
+    elif "Pacote em Aberto" in tipo_ofensa:
+        df = df[df["PACOTE EM ABERTO"] > 0]
 # -----------------------------
 # 🔎 ANÁLISE INDIVIDUAL
 # -----------------------------
