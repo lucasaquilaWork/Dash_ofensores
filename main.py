@@ -131,23 +131,32 @@ if veiculos:
     df = df[df["Veiculo"].isin(veiculos)]
 
 # 🔥 FILTRO DE OFENSA (LÓGICA CORRETA)
+# 🔥 ORDENAÇÃO DINÂMICA BASEADA NO FILTRO
 if tipo_ofensa:
-
-    filtro_final = pd.Series(False, index=df.index)
-
-    # OnHold > 0
-    if "OnHold" in tipo_ofensa:
-        filtro_final |= (df["OnHold"] > 0)
-
-    # Pacote > 0
-    if "Pacote em Aberto" in tipo_ofensa:
-        filtro_final |= (df["PACOTE EM ABERTO"] > 0)
-
-    # Ambos (obrigatoriamente os dois)
     if "Ambos" in tipo_ofensa:
-        filtro_final |= ((df["OnHold"] > 0) & (df["PACOTE EM ABERTO"] > 0))
+        top20 = df.sort_values(
+            ["OnHold", "PACOTE EM ABERTO"],
+            ascending=False
+        ).head(20)
 
-    df = df[filtro_final]
+    elif "OnHold" in tipo_ofensa and "Pacote em Aberto" in tipo_ofensa:
+        top20 = df.sort_values(
+            ["OnHold", "PACOTE EM ABERTO"],
+            ascending=False
+        ).head(20)
+
+    elif "OnHold" in tipo_ofensa:
+        top20 = df.sort_values("OnHold", ascending=False).head(20)
+
+    elif "Pacote em Aberto" in tipo_ofensa:
+        top20 = df.sort_values("PACOTE EM ABERTO", ascending=False).head(20)
+
+else:
+    # padrão (impacto geral)
+    top20 = df.sort_values(
+        ["IMPACTO", "Soma de pacotes"],
+        ascending=False
+    ).head(20)
 # -----------------------------
 # 🔎 ANÁLISE INDIVIDUAL
 # -----------------------------
@@ -197,7 +206,6 @@ else:
 # -----------------------------
 st.subheader(titulo_volume)
 
-top20_volume = df.sort_values("Soma de pacotes", ascending=False).head(20)
 
 fig_top20 = px.bar(
     top20_volume,
