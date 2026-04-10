@@ -131,8 +131,23 @@ if veiculos:
     df = df[df["Veiculo"].isin(veiculos)]
 
 # 🔥 FILTRO DE OFENSA
+# 🔥 FILTRO DE OFENSA (CORRETO DE VERDADE)
 if tipo_ofensa:
-    df = df[df["TIPO_OFENSA"].isin(tipo_ofensa)]
+
+    condicoes = []
+
+    if "OnHold" in tipo_ofensa:
+        condicoes.append(df["OnHold"] > 0)
+
+    if "Pacote em Aberto" in tipo_ofensa:
+        condicoes.append(df["PACOTE EM ABERTO"] > 0)
+
+    if "Ambos" in tipo_ofensa:
+        condicoes.append((df["OnHold"] > 0) & (df["PACOTE EM ABERTO"] > 0))
+
+    # Junta tudo com OR (qualquer condição válida)
+    if condicoes:
+        df = df[np.logical_or.reduce(condicoes)]
 # -----------------------------
 # 🔎 ANÁLISE INDIVIDUAL
 # -----------------------------
