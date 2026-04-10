@@ -93,7 +93,7 @@ col3.metric("📉 Recorrência Média", f"{df['RECORRENCIA'].mean():.2%}")
 # -----------------------------
 # 🔍 FILTROS
 # -----------------------------
-col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+col_f1, col_f2, col_f3 = st.columns(3)
 
 motoristas = col_f1.multiselect(
     "Filtrar motoristas",
