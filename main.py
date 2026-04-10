@@ -110,10 +110,10 @@ veiculos = col_f3.multiselect(
     sorted(df["Veiculo"].dropna().unique())
 )
 
-tipo_ofensa = col_f4.multiselect(
-    "Tipo de ofensa",
-    ["OnHold", "Pacote em Aberto", "Ambos"]
-)
+#tipo_ofensa = col_f4.multiselect(
+#    "Tipo de ofensa",
+#    ["OnHold", "Pacote em Aberto", "Ambos"]
+#)
 
 # -----------------------------
 # 🔄 APLICA FILTROS
@@ -132,31 +132,31 @@ if veiculos:
 
 # 🔥 FILTRO DE OFENSA (LÓGICA CORRETA)
 # 🔥 ORDENAÇÃO DINÂMICA BASEADA NO FILTRO
-if tipo_ofensa:
-    if "Ambos" in tipo_ofensa:
-        top20 = df.sort_values(
-            ["OnHold", "PACOTE EM ABERTO"],
-            ascending=False
-        ).head(20)
+#if tipo_ofensa:
+#    if "Ambos" in tipo_ofensa:
+#        top20 = df.sort_values(
+#            ["OnHold", "PACOTE EM ABERTO"],
+#            ascending=False
+#        ).head(20)
 
-    elif "OnHold" in tipo_ofensa and "Pacote em Aberto" in tipo_ofensa:
-        top20 = df.sort_values(
-            ["OnHold", "PACOTE EM ABERTO"],
-            ascending=False
-        ).head(20)
+#    elif "OnHold" in tipo_ofensa and "Pacote em Aberto" in tipo_ofensa:
+#        top20 = df.sort_values(
+#            ["OnHold", "PACOTE EM ABERTO"],
+#            ascending=False
+#        ).head(20)
 
-    elif "OnHold" in tipo_ofensa:
-        top20 = df.sort_values("OnHold", ascending=False).head(20)
+#    elif "OnHold" in tipo_ofensa:
+#        top20 = df.sort_values("OnHold", ascending=False).head(20)
 
-    elif "Pacote em Aberto" in tipo_ofensa:
-        top20 = df.sort_values("PACOTE EM ABERTO", ascending=False).head(20)
+#    elif "Pacote em Aberto" in tipo_ofensa:
+#        top20 = df.sort_values("PACOTE EM ABERTO", ascending=False).head(20)
 
-else:
+#else:
     # padrão (impacto geral)
-    top20 = df.sort_values(
-        ["IMPACTO", "Soma de pacotes"],
-        ascending=False
-    ).head(20)
+#    top20 = df.sort_values(
+#        ["IMPACTO", "Soma de pacotes"],
+#        ascending=False
+#    ).head(20)
 # -----------------------------
 # 🔎 ANÁLISE INDIVIDUAL
 # -----------------------------
