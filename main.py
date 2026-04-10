@@ -246,6 +246,36 @@ fig_full_volume.update_layout(
 st.plotly_chart(fig_full_volume, use_container_width=True)
 
 # -----------------------------
+# 📦 TOP PACOTES EM ABERTO
+# -----------------------------
+st.subheader("📦 Motoristas com mais Pacotes em Aberto")
+
+# 🔥 filtra só quem tem pacote > 0
+df_pacote = df[df["PACOTE EM ABERTO"] > 0]
+
+# 🔥 ordena do maior pro menor
+top_pacote = df_pacote.sort_values("PACOTE EM ABERTO", ascending=False).head(20)
+
+# gráfico
+fig_pacote = px.bar(
+    top_pacote,
+    y="NOME",
+    x="PACOTE EM ABERTO",
+    orientation="h",
+    text="PACOTE EM ABERTO",
+    color="STATUS",
+    color_discrete_map=color_map
+)
+
+fig_pacote.update_traces(textposition="outside")
+
+fig_pacote.update_layout(
+    yaxis={'categoryorder': 'total ascending'}
+)
+
+st.plotly_chart(fig_pacote, use_container_width=True)
+
+# -----------------------------
 # 🚗 RECORRÊNCIA MÉDIA POR VEÍCULO
 # -----------------------------
 st.subheader("🚗 Recorrência Média por Veículo")
