@@ -49,6 +49,20 @@ df["RECORRENCIA"] = df.apply(
 )
 
 df["IMPACTO"] = df["RECORRENCIA"] * np.log1p(df["Soma de pacotes"])
+# -----------------------------
+# 🧠 CLASSIFICAÇÃO DE OFENSA
+# -----------------------------
+def tipo_ofensa(row):
+    if row["OnHold"] > 0 and row["PACOTE EM ABERTO"] > 0:
+        return "Ambos"
+    elif row["OnHold"] > 0:
+        return "OnHold"
+    elif row["PACOTE EM ABERTO"] > 0:
+        return "Pacote em Aberto"
+    else:
+        return "Sem Ofensa"
+
+df["TIPO_OFENSA"] = df.apply(tipo_ofensa, axis=1)
 
 def definir_status(x):
     if x > 0.5:
@@ -98,7 +112,7 @@ veiculos = col_f3.multiselect(
 
 tipo_ofensa = col_f4.multiselect(
     "Tipo de ofensa",
-    ["OnHold", "Pacote em Aberto"]
+    ["OnHold", "Pacote em Aberto", "Ambos"]
 )
 
 # -----------------------------
@@ -118,12 +132,7 @@ if veiculos:
 
 # 🔥 FILTRO DE OFENSA
 if tipo_ofensa:
-    if "OnHold" in tipo_ofensa and "Pacote em Aberto" in tipo_ofensa:
-        pass  # mantém tudo
-    elif "OnHold" in tipo_ofensa:
-        df = df[df["OnHold"] > 0]
-    elif "Pacote em Aberto" in tipo_ofensa:
-        df = df[df["PACOTE EM ABERTO"] > 0]
+    df = df[df["TIPO_OFENSA"].isin(tipo_ofensa)]
 # -----------------------------
 # 🔎 ANÁLISE INDIVIDUAL
 # -----------------------------
