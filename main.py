@@ -130,24 +130,24 @@ if turnos:
 if veiculos:
     df = df[df["Veiculo"].isin(veiculos)]
 
-# 🔥 FILTRO DE OFENSA
-# 🔥 FILTRO DE OFENSA (CORRETO DE VERDADE)
+# 🔥 FILTRO DE OFENSA (LÓGICA CORRETA)
 if tipo_ofensa:
 
-    condicoes = []
+    filtro_final = pd.Series(False, index=df.index)
 
+    # OnHold > 0
     if "OnHold" in tipo_ofensa:
-        condicoes.append(df["OnHold"] > 0)
+        filtro_final |= (df["OnHold"] > 0)
 
+    # Pacote > 0
     if "Pacote em Aberto" in tipo_ofensa:
-        condicoes.append(df["PACOTE EM ABERTO"] > 0)
+        filtro_final |= (df["PACOTE EM ABERTO"] > 0)
 
+    # Ambos (obrigatoriamente os dois)
     if "Ambos" in tipo_ofensa:
-        condicoes.append((df["OnHold"] > 0) & (df["PACOTE EM ABERTO"] > 0))
+        filtro_final |= ((df["OnHold"] > 0) & (df["PACOTE EM ABERTO"] > 0))
 
-    # Junta tudo com OR (qualquer condição válida)
-    if condicoes:
-        df = df[np.logical_or.reduce(condicoes)]
+    df = df[filtro_final]
 # -----------------------------
 # 🔎 ANÁLISE INDIVIDUAL
 # -----------------------------
